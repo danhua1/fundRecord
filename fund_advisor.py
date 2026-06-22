@@ -12,18 +12,65 @@ import json
 import re
 import time
 import math
+import random
+import atexit
+import logging
 from datetime import datetime
 from collections import defaultdict
+from typing import Optional
 
 # ============================================================
 # 基础配置
 # ============================================================
-UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
+
+# 日志配置
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
+# User-Agent 池，防止爬虫识别
+USER_AGENTS = [
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 13_1) AppleWebKit/605.1.15",
+]
+
+# 自定义异常
+class NetworkError(Exception):
+    """网络请求异常"""
+    pass
+
+class ValidationError(Exception):
+    """输入验证异常"""
+    pass
+
+# 评分配置常量
+class ScoringConfig:
+    SMALL_FUND_THRESHOLD = 5000  # 万元，小规模基金阈值（流动性风险）
+    LARGE_FUND_THRESHOLD = 800000  # 万元，超大规模基金阈值（船大难调头）
+    SMALL_FUND_PENALTY = 0.5
+    LARGE_FUND_PENALTY = 0.3
+    MAX_FEE_PENALTY = 0.5
+    FEE_DIVISOR = 3.0
+    TRADING_DAYS_6M = 125  # 半年约125个交易日
+    TRADING_DAYS_1Y = 250  # 一年约250个交易日
+    TRADING_DAYS_3Y = 750  # 三年约750个交易日
+
 SESSION = requests.Session()
-SESSION.headers.update({"User-Agent": UA})
+SESSION.headers.update({"User-Agent": random.choice(USER_AGENTS)})
 _LAST_CALL = 0
 _CALL_INTERVAL = 0.6
 _CACHE = {}
+
+def cleanup_session():
+    """程序退出时清理 Session"""
+    SESSION.close()
+    logger.info("Session 已清理")
+
+atexit.register(cleanup_session)
 
 # 板块关键词 → 名称匹配
 SECTOR_KEYWORDS = {
@@ -87,19 +134,41 @@ def _rate_limit():
 
 def em_get(url, params=None, headers=None, timeout=15, max_retries=3):
     _rate_limit()
-    h = {"User-Agent": UA, "Referer": "https://fund.eastmoney.com/"}
+    h = {
+        "User-Agent": random.choice(USER_AGENTS),
+        "Referer": "https://fund.eastmoney.com/"
+    }
     if headers:
         h.update(headers)
+
     for attempt in range(max_retries):
         try:
+            logger.debug(f"请求 {url}, 参数: {params}, 尝试: {attempt + 1}/{max_retries}")
             r = SESSION.get(url, params=params, headers=h, timeout=timeout)
+            r.raise_for_status()  # 检查 HTTP 状态码
             r.encoding = "utf-8"
             return r
-        except Exception as e:
+        except requests.Timeout as e:
+            logger.warning(f"请求超时 {url}: {e}")
             if attempt < max_retries - 1:
-                time.sleep(2 * (attempt + 1))
+                wait_time = min(2 ** attempt, 10)  # 指数退避，上限10秒
+                logger.info(f"等待 {wait_time}s 后重试...")
+                time.sleep(wait_time)
             else:
-                raise e
+                raise NetworkError(f"请求超时，已重试 {max_retries} 次: {url}") from e
+        except requests.HTTPError as e:
+            logger.error(f"HTTP 错误 {url}: {e}")
+            if attempt < max_retries - 1 and e.response.status_code >= 500:
+                wait_time = min(2 ** attempt, 10)
+                time.sleep(wait_time)
+            else:
+                raise NetworkError(f"HTTP 错误 {e.response.status_code}: {url}") from e
+        except requests.RequestException as e:
+            logger.error(f"请求异常 {url}: {e}")
+            if attempt < max_retries - 1:
+                time.sleep(min(2 ** attempt, 10))
+            else:
+                raise NetworkError(f"请求失败: {url}") from e
 
 
 # ============================================================
@@ -111,7 +180,8 @@ def fund_list() -> list[dict]:
     print("  ⏳ 拉取全量基金列表...", end=" ")
     r = em_get("http://fund.eastmoney.com/js/fundcode_search.js", timeout=30)
     text = r.text.replace("﻿", "")
-    matches = re.findall(r'\["(.*?)","(.*?)","(.*?)","(.*?)","(.*?)"\]', text)
+    # 修复 ReDoS: 使用严格字符类替代 (.*?)，限制长度
+    matches = re.findall(r'\["([^"]{1,20})","([^"]{1,50})","([^"]{1,100})","([^"]{1,30})","([^"]{1,10})"\]', text)
     funds = [{"code": m[0], "pinyin": m[1], "name": m[2], "type": m[3]} for m in matches]
     _CACHE["fund_list"] = funds
     print(f"{len(funds)} 只")
@@ -212,6 +282,14 @@ def fund_ranking(
 # 3. 基金持仓 → 板块推断
 # ============================================================
 def fund_holdings(code: str, year: int = 2026, quarter: int = 1) -> dict:
+    # 输入验证
+    if not re.match(r'^\d{6}$', code):
+        raise ValidationError(f"基金代码格式错误，应为6位数字: {code}")
+    if not (2000 <= year <= 2050):
+        raise ValidationError(f"year 必须在 2000-2050 之间，当前值: {year}")
+    if quarter not in (1, 2, 3, 4):
+        raise ValidationError(f"quarter 必须为 1-4，当前值: {quarter}")
+
     url = "https://fundf10.eastmoney.com/FundArchivesDatas.aspx"
     params = {
         "type": "jjcc", "code": code,
@@ -220,8 +298,9 @@ def fund_holdings(code: str, year: int = 2026, quarter: int = 1) -> dict:
     try:
         r = em_get(url, params=params, timeout=10)
         text = r.text
+        # 修复 ReDoS: 限制字符类和长度
         rows = re.findall(
-            r'<td[^>]*><a[^>]*>(\d{6})</a></td>\s*<td[^>]*><a[^>]*>([^<]+)</a></td>.*?<td[^>]*>([\d.]+)%</td>',
+            r'<td[^>]{0,50}><a[^>]{0,100}>(\d{6})</a></td>\s*<td[^>]{0,50}><a[^>]{0,100}>([^<]{1,50})</a></td>.*?<td[^>]{0,50}>([\d.]{1,10})%</td>',
             text, re.DOTALL
         )
         stocks = []
@@ -238,7 +317,10 @@ def fund_holdings(code: str, year: int = 2026, quarter: int = 1) -> dict:
                         sector_weight[sector] += ratio
         hint = max(sector_weight, key=sector_weight.get) if sector_weight else "综合"
         return {"stocks": stocks, "sector_hint": hint}
-    except Exception:
+    except (NetworkError, ValidationError):
+        raise
+    except Exception as e:
+        logger.error(f"获取持仓失败 {code}: {e}")
         return {"stocks": [], "sector_hint": "未知"}
 
 
@@ -273,17 +355,17 @@ def score_funds(funds: list[dict], top_n: int = 30) -> list[dict]:
     for i, f in enumerate(funds):
         sz = sizes[i]
         size_penalty = 0
-        if 0 < sz < 5000:
-            size_penalty = 0.5
-        elif sz > 800000:
-            size_penalty = 0.3
+        if 0 < sz < ScoringConfig.SMALL_FUND_THRESHOLD:
+            size_penalty = ScoringConfig.SMALL_FUND_PENALTY
+        elif sz > ScoringConfig.LARGE_FUND_THRESHOLD:
+            size_penalty = ScoringConfig.LARGE_FUND_PENALTY
 
         fee_str = f.get("fee", "0%") or "0%"
         try:
             fee_val = float(fee_str.replace("%", ""))
         except ValueError:
             fee_val = 0
-        fee_penalty = min(fee_val / 3.0, 0.5)
+        fee_penalty = min(fee_val / ScoringConfig.FEE_DIVISOR, ScoringConfig.MAX_FEE_PENALTY)
 
         f["score"] = round(
             0.30 * n_1y[i] + 0.20 * n_3y[i] + 0.15 * n_6m[i]
@@ -297,13 +379,52 @@ def score_funds(funds: list[dict], top_n: int = 30) -> list[dict]:
 
 
 # ============================================================
-# 5. 查找最佳 ETF (通用)
+# 5. 查找最佳 ETF (通用) + 性能优化索引
 # ============================================================
-def find_etf(keyword: str, exclude_faqi: bool = True) -> dict | None:
-    """从全量基金列表中按关键词匹配最佳 ETF/指数基金"""
-    all_f = fund_list()
-    matches = [f for f in all_f if keyword in f["name"]
-               and any(tag in f["name"] for tag in ["ETF", "联接", "指数"])]
+def build_fund_index() -> dict[str, list[dict]]:
+    """构建基金名称倒排索引，加速查询"""
+    if "fund_index" in _CACHE:
+        return _CACHE["fund_index"]
+
+    index = defaultdict(list)
+    all_funds = fund_list()
+
+    # 构建关键词索引
+    index_keywords = ["ETF", "联接", "指数"] + list(SECTOR_KEYWORDS.keys())
+    for kw in HOT_SECTORS:
+        if kw not in index_keywords:
+            index_keywords.append(kw)
+
+    for fund in all_funds:
+        for keyword in index_keywords:
+            if keyword in fund["name"]:
+                index[keyword].append(fund)
+
+    _CACHE["fund_index"] = index
+    logger.info(f"基金索引构建完成，索引关键词: {len(index_keywords)} 个")
+    return index
+
+
+def find_etf(keyword: str, exclude_faqi: bool = True) -> Optional[dict]:
+    """从全量基金列表中按关键词匹配最佳 ETF/指数基金（使用索引优化）"""
+    # 输入验证
+    if not keyword or len(keyword) > 50:
+        raise ValidationError(f"关键词长度必须在 1-50 之间: {keyword}")
+    if not re.match(r'^[一-龥a-zA-Z0-9]+$', keyword):
+        raise ValidationError(f"关键词只能包含中文、字母、数字: {keyword}")
+
+    # 尝试使用索引
+    index = build_fund_index()
+    if keyword in index:
+        candidates = index[keyword]
+    else:
+        # 回退到全量搜索
+        all_f = fund_list()
+        candidates = [f for f in all_f if keyword in f["name"]]
+
+    matches = [f for f in candidates
+               if any(tag in f["name"] for tag in ["ETF", "联接", "指数"])]
+
     if exclude_faqi:
         matches = [m for m in matches if "发起式" not in m["name"]]
     # 优先 A 类
@@ -311,6 +432,15 @@ def find_etf(keyword: str, exclude_faqi: bool = True) -> dict | None:
         if m["name"].endswith("A") or "A" in m["name"].split("联接")[-1][:2]:
             return m
     return matches[0] if matches else None
+
+
+def fund_ranking_batch(fund_type: str, sort_by: str, pages: int = 3, page_size: int = 200) -> list[dict]:
+    """批量拉取多页排名数据，减少重复调用"""
+    results = []
+    for page in range(1, pages + 1):
+        page_data = fund_ranking(fund_type, sort_by, page_size, page)
+        results.extend(page_data)
+    return results
 
 
 # ============================================================
@@ -359,7 +489,7 @@ def enrich_with_nav_fallback(funds: list[dict]) -> list[dict]:
     return funds
 
 
-def fund_nav_fast(code: str) -> dict | None:
+def fund_nav_fast(code: str) -> Optional[dict]:
     """快速获取基金近期净值用于计算收益（取最新 + 半年前 + 1年前 + 3年前 点位）"""
     try:
         url = "https://api.fund.eastmoney.com/f10/lsjz"
@@ -385,7 +515,7 @@ def fund_nav_fast(code: str) -> dict | None:
                      headers={"Referer": "https://fundf10.eastmoney.com/"}, timeout=10)
         data2 = json.loads(r2.text[r2.text.index("(") + 1:r2.text.rindex(")")])
         nav_list_6m = data2.get("Data", {}).get("LSJZList", [])
-        if len(nav_list_6m) > 150:
+        if len(nav_list_6m) > ScoringConfig.TRADING_DAYS_6M:
             old_6m = float(nav_list_6m[-1]["DWJZ"])
             ret_6m = round((latest_nav - old_6m) / old_6m * 100, 1)
 
@@ -398,14 +528,15 @@ def fund_nav_fast(code: str) -> dict | None:
                          headers={"Referer": "https://fundf10.eastmoney.com/"}, timeout=10)
             data3 = json.loads(r3.text[r3.text.index("(") + 1:r3.text.rindex(")")])
             nav_list_1y = data3.get("Data", {}).get("LSJZList", [])
-            if len(nav_list_1y) >= 250 - (page - 1) * 100 or page == 3:
+            if len(nav_list_1y) >= ScoringConfig.TRADING_DAYS_1Y - (page - 1) * 100 or page == 3:
                 # Use earliest NAV in the batch
                 old_1y = float(nav_list_1y[-1]["DWJZ"])
                 ret_1y = round((latest_nav - old_1y) / old_1y * 100, 1)
                 break
 
         return {"ret_1y": ret_1y, "ret_3y": 0, "ret_6m": ret_6m, "fund_size": 0, "fee": ""}
-    except Exception:
+    except (NetworkError, json.JSONDecodeError, KeyError, ValueError, IndexError) as e:
+        logger.warning(f"NAV 回退失败 {code}: {e}")
         return None
 
 
@@ -418,10 +549,8 @@ def v1_defensive() -> dict:
     print("\n🛡️  V1 稳健版...")
     ftype = fund_type_map()
 
-    # 债券排名 — 拉 3 页确保覆盖足够的长债/中短债
-    bond_rank = fund_ranking("zq", sort_by="zzf", page_size=200)
-    bond_rank += fund_ranking("zq", sort_by="zzf", page_size=200, page=2)
-    bond_rank += fund_ranking("zq", sort_by="zzf", page_size=200, page=3)
+    # 债券排名 — 使用批量请求替代多次调用
+    bond_rank = fund_ranking_batch("zq", sort_by="zzf", pages=3, page_size=200)
 
     long_bond = [f for f in bond_rank if "长债" in ftype.get(f["code"], "")]
     short_bond = [f for f in bond_rank if "中短债" in ftype.get(f["code"], "")]
@@ -479,9 +608,8 @@ def v2_balanced() -> dict:
         f["type"] = ftype.get(f["code"], "混合型")
     equity = score_funds(equity, top_n=3)
 
-    # 纯债 — 拉多页获取足够长债
-    bond_rank = fund_ranking("zq", sort_by="zzf", page_size=200)
-    bond_rank += fund_ranking("zq", sort_by="zzf", page_size=200, page=2)
+    # 纯债 — 使用批量请求
+    bond_rank = fund_ranking_batch("zq", sort_by="zzf", pages=2, page_size=200)
     bonds = [f for f in bond_rank if "长债" in ftype.get(f["code"], "")]
     for f in bonds:
         f["type"] = ftype.get(f["code"], "债券型")
