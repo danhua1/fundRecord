@@ -1,0 +1,38 @@
+{
+  "total_calls": 2,
+  "successful_calls": 2,
+  "failed_calls": 0,
+  "total_duration": 1.131,
+  "calls": [
+    {
+      "timestamp": "2026-06-23T13:11:53.353649",
+      "url": "http://fund.eastmoney.com/js/fundcode_search.js",
+      "params": null,
+      "status": 200,
+      "duration": 0.389,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T13:11:53.958746",
+      "url": "https://fund.eastmoney.com/data/rankhandler.aspx",
+      "params": {
+        "op": "ph",
+        "dt": "kf",
+        "ft": "zq",
+        "rs": "",
+        "gs": "0",
+        "sc": "zzf",
+        "st": "desc",
+        "pi": "1",
+        "pn": "200",
+        "mg": "a",
+        "v": "0.1"
+      },
+      "status": 200,
+      "duration": 0.742,
+      "error": null,
+      "retries": 0
+    }
+  ]
+}

@@ -1,0 +1,1036 @@
+{
+  "total_calls": 67,
+  "successful_calls": 66,
+  "failed_calls": 1,
+  "total_duration": 48.385,
+  "calls": [
+    {
+      "timestamp": "2026-06-23T13:00:57.232274",
+      "url": "http://fund.eastmoney.com/js/fundcode_search.js",
+      "params": null,
+      "status": 200,
+      "duration": 0.369,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T13:00:57.837404",
+      "url": "https://fund.eastmoney.com/data/rankhandler.aspx",
+      "params": {
+        "op": "ph",
+        "dt": "kf",
+        "ft": "zq",
+        "rs": "",
+        "gs": "0",
+        "sc": "zzf",
+        "st": "desc",
+        "pi": "1",
+        "pn": "200",
+        "mg": "a",
+        "v": "0.1"
+      },
+      "status": 200,
+      "duration": 0.484,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T13:00:58.442420",
+      "url": "https://fund.eastmoney.com/data/rankhandler.aspx",
+      "params": {
+        "op": "ph",
+        "dt": "kf",
+        "ft": "zq",
+        "rs": "",
+        "gs": "0",
+        "sc": "zzf",
+        "st": "desc",
+        "pi": "2",
+        "pn": "200",
+        "mg": "a",
+        "v": "0.1"
+      },
+      "status": 200,
+      "duration": 12.52,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T13:01:10.965632",
+      "url": "https://fund.eastmoney.com/data/rankhandler.aspx",
+      "params": {
+        "op": "ph",
+        "dt": "kf",
+        "ft": "zq",
+        "rs": "",
+        "gs": "0",
+        "sc": "zzf",
+        "st": "desc",
+        "pi": "3",
+        "pn": "200",
+        "mg": "a",
+        "v": "0.1"
+      },
+      "status": 200,
+      "duration": 2.489,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T13:01:13.458389",
+      "url": "https://fund.eastmoney.com/data/rankhandler.aspx",
+      "params": {
+        "op": "ph",
+        "dt": "kf",
+        "ft": "hh",
+        "rs": "",
+        "gs": "0",
+        "sc": "zzf",
+        "st": "desc",
+        "pi": "1",
+        "pn": "200",
+        "mg": "a",
+        "v": "0.1"
+      },
+      "status": 200,
+      "duration": 3.176,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T13:01:16.638101",
+      "url": "https://fund.eastmoney.com/data/rankhandler.aspx",
+      "params": {
+        "op": "ph",
+        "dt": "kf",
+        "ft": "hh",
+        "rs": "",
+        "gs": "0",
+        "sc": "zzf",
+        "st": "desc",
+        "pi": "2",
+        "pn": "200",
+        "mg": "a",
+        "v": "0.1"
+      },
+      "status": 200,
+      "duration": 2.098,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T13:01:18.756509",
+      "url": "https://fund.eastmoney.com/data/rankhandler.aspx",
+      "params": {
+        "op": "ph",
+        "dt": "kf",
+        "ft": "zs",
+        "rs": "",
+        "gs": "0",
+        "sc": "zzf",
+        "st": "desc",
+        "pi": "1",
+        "pn": "300",
+        "mg": "a",
+        "v": "0.1"
+      },
+      "status": 200,
+      "duration": 2.178,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T13:01:20.989683",
+      "url": "https://api.fund.eastmoney.com/f10/lsjz",
+      "params": {
+        "fundCode": "000051",
+        "pageIndex": "2",
+        "pageSize": "100",
+        "callback": "jQuery"
+      },
+      "status": 200,
+      "duration": 0.111,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T13:01:21.594731",
+      "url": "https://api.fund.eastmoney.com/f10/lsjz",
+      "params": {
+        "fundCode": "000051",
+        "pageIndex": "2",
+        "pageSize": "100",
+        "callback": "jQuery"
+      },
+      "status": 200,
+      "duration": 0.043,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T13:01:22.199840",
+      "url": "https://api.fund.eastmoney.com/f10/lsjz",
+      "params": {
+        "fundCode": "000008",
+        "pageIndex": "2",
+        "pageSize": "100",
+        "callback": "jQuery"
+      },
+      "status": 200,
+      "duration": 0.039,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T13:01:22.808707",
+      "url": "https://api.fund.eastmoney.com/f10/lsjz",
+      "params": {
+        "fundCode": "000008",
+        "pageIndex": "2",
+        "pageSize": "100",
+        "callback": "jQuery"
+      },
+      "status": 200,
+      "duration": 0.039,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T13:01:23.412707",
+      "url": "https://api.fund.eastmoney.com/f10/lsjz",
+      "params": {
+        "fundCode": "001592",
+        "pageIndex": "2",
+        "pageSize": "100",
+        "callback": "jQuery"
+      },
+      "status": 200,
+      "duration": 0.04,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T13:01:24.017686",
+      "url": "https://api.fund.eastmoney.com/f10/lsjz",
+      "params": {
+        "fundCode": "001592",
+        "pageIndex": "2",
+        "pageSize": "100",
+        "callback": "jQuery"
+      },
+      "status": 200,
+      "duration": 0.049,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T13:01:24.622428",
+      "url": "https://fund.eastmoney.com/data/rankhandler.aspx",
+      "params": {
+        "op": "ph",
+        "dt": "kf",
+        "ft": "zs",
+        "rs": "",
+        "gs": "0",
+        "sc": "6y",
+        "st": "desc",
+        "pi": "1",
+        "pn": "400",
+        "mg": "a",
+        "v": "0.1"
+      },
+      "status": 200,
+      "duration": 4.287,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T13:01:28.950999",
+      "url": "https://api.fund.eastmoney.com/f10/lsjz",
+      "params": {
+        "fundCode": "009067",
+        "pageIndex": "2",
+        "pageSize": "100",
+        "callback": "jQuery"
+      },
+      "status": 200,
+      "duration": 0.047,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T13:01:29.555823",
+      "url": "https://api.fund.eastmoney.com/f10/lsjz",
+      "params": {
+        "fundCode": "009067",
+        "pageIndex": "2",
+        "pageSize": "100",
+        "callback": "jQuery"
+      },
+      "status": 200,
+      "duration": 0.049,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T13:01:30.160001",
+      "url": "https://api.fund.eastmoney.com/f10/lsjz",
+      "params": {
+        "fundCode": "008281",
+        "pageIndex": "2",
+        "pageSize": "100",
+        "callback": "jQuery"
+      },
+      "status": 200,
+      "duration": 0.037,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T13:01:30.765028",
+      "url": "https://api.fund.eastmoney.com/f10/lsjz",
+      "params": {
+        "fundCode": "008281",
+        "pageIndex": "2",
+        "pageSize": "100",
+        "callback": "jQuery"
+      },
+      "status": 200,
+      "duration": 0.045,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T13:01:31.368924",
+      "url": "https://api.fund.eastmoney.com/f10/lsjz",
+      "params": {
+        "fundCode": "007300",
+        "pageIndex": "2",
+        "pageSize": "100",
+        "callback": "jQuery"
+      },
+      "status": 200,
+      "duration": 0.04,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T13:01:31.976878",
+      "url": "https://api.fund.eastmoney.com/f10/lsjz",
+      "params": {
+        "fundCode": "007300",
+        "pageIndex": "2",
+        "pageSize": "100",
+        "callback": "jQuery"
+      },
+      "status": 200,
+      "duration": 0.046,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T13:01:32.580840",
+      "url": "https://api.fund.eastmoney.com/f10/lsjz",
+      "params": {
+        "fundCode": "008020",
+        "pageIndex": "2",
+        "pageSize": "100",
+        "callback": "jQuery"
+      },
+      "status": 200,
+      "duration": 0.041,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T13:01:33.185898",
+      "url": "https://api.fund.eastmoney.com/f10/lsjz",
+      "params": {
+        "fundCode": "008020",
+        "pageIndex": "2",
+        "pageSize": "100",
+        "callback": "jQuery"
+      },
+      "status": 200,
+      "duration": 0.058,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T13:01:33.791020",
+      "url": "https://api.fund.eastmoney.com/f10/lsjz",
+      "params": {
+        "fundCode": "000248",
+        "pageIndex": "2",
+        "pageSize": "100",
+        "callback": "jQuery"
+      },
+      "status": 200,
+      "duration": 0.452,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T13:01:34.393467",
+      "url": "https://api.fund.eastmoney.com/f10/lsjz",
+      "params": {
+        "fundCode": "000248",
+        "pageIndex": "2",
+        "pageSize": "100",
+        "callback": "jQuery"
+      },
+      "status": 200,
+      "duration": 0.042,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T13:01:34.998594",
+      "url": "https://api.fund.eastmoney.com/f10/lsjz",
+      "params": {
+        "fundCode": "000373",
+        "pageIndex": "2",
+        "pageSize": "100",
+        "callback": "jQuery"
+      },
+      "status": 200,
+      "duration": 0.062,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T13:01:35.603888",
+      "url": "https://api.fund.eastmoney.com/f10/lsjz",
+      "params": {
+        "fundCode": "000373",
+        "pageIndex": "2",
+        "pageSize": "100",
+        "callback": "jQuery"
+      },
+      "status": 200,
+      "duration": 0.044,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T13:01:36.204199",
+      "url": "https://api.fund.eastmoney.com/f10/lsjz",
+      "params": {
+        "fundCode": "000596",
+        "pageIndex": "2",
+        "pageSize": "100",
+        "callback": "jQuery"
+      },
+      "status": 200,
+      "duration": 0.345,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T13:01:36.805926",
+      "url": "https://api.fund.eastmoney.com/f10/lsjz",
+      "params": {
+        "fundCode": "000596",
+        "pageIndex": "2",
+        "pageSize": "100",
+        "callback": "jQuery"
+      },
+      "status": 200,
+      "duration": 0.046,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T13:01:37.410996",
+      "url": "https://api.fund.eastmoney.com/f10/lsjz",
+      "params": {
+        "fundCode": "004854",
+        "pageIndex": "2",
+        "pageSize": "100",
+        "callback": "jQuery"
+      },
+      "status": 200,
+      "duration": 0.036,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T13:01:38.015805",
+      "url": "https://api.fund.eastmoney.com/f10/lsjz",
+      "params": {
+        "fundCode": "004854",
+        "pageIndex": "2",
+        "pageSize": "100",
+        "callback": "jQuery"
+      },
+      "status": 200,
+      "duration": 0.044,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T13:01:38.616398",
+      "url": "https://api.fund.eastmoney.com/f10/lsjz",
+      "params": {
+        "fundCode": "001594",
+        "pageIndex": "2",
+        "pageSize": "100",
+        "callback": "jQuery"
+      },
+      "status": 200,
+      "duration": 0.052,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T13:01:39.219722",
+      "url": "https://api.fund.eastmoney.com/f10/lsjz",
+      "params": {
+        "fundCode": "001594",
+        "pageIndex": "2",
+        "pageSize": "100",
+        "callback": "jQuery"
+      },
+      "status": 200,
+      "duration": 0.053,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T13:01:39.829124",
+      "url": "https://api.fund.eastmoney.com/f10/lsjz",
+      "params": {
+        "fundCode": "000950",
+        "pageIndex": "2",
+        "pageSize": "100",
+        "callback": "jQuery"
+      },
+      "status": 200,
+      "duration": 0.049,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T13:01:40.434680",
+      "url": "https://api.fund.eastmoney.com/f10/lsjz",
+      "params": {
+        "fundCode": "000950",
+        "pageIndex": "2",
+        "pageSize": "100",
+        "callback": "jQuery"
+      },
+      "status": 200,
+      "duration": 0.055,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T13:01:41.038384",
+      "url": "https://api.fund.eastmoney.com/f10/lsjz",
+      "params": {
+        "fundCode": "008279",
+        "pageIndex": "2",
+        "pageSize": "100",
+        "callback": "jQuery"
+      },
+      "status": 200,
+      "duration": 0.192,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T13:01:41.643412",
+      "url": "https://api.fund.eastmoney.com/f10/lsjz",
+      "params": {
+        "fundCode": "008279",
+        "pageIndex": "2",
+        "pageSize": "100",
+        "callback": "jQuery"
+      },
+      "status": 200,
+      "duration": 0.042,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T13:01:42.245117",
+      "url": "https://api.fund.eastmoney.com/f10/lsjz",
+      "params": {
+        "fundCode": "004432",
+        "pageIndex": "2",
+        "pageSize": "100",
+        "callback": "jQuery"
+      },
+      "status": 200,
+      "duration": 0.04,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T13:01:42.853534",
+      "url": "https://api.fund.eastmoney.com/f10/lsjz",
+      "params": {
+        "fundCode": "004432",
+        "pageIndex": "2",
+        "pageSize": "100",
+        "callback": "jQuery"
+      },
+      "status": 200,
+      "duration": 0.039,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T13:01:43.458604",
+      "url": "https://api.fund.eastmoney.com/f10/lsjz",
+      "params": {
+        "fundCode": "001027",
+        "pageIndex": "2",
+        "pageSize": "100",
+        "callback": "jQuery"
+      },
+      "status": 200,
+      "duration": 0.043,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T13:01:44.063585",
+      "url": "https://api.fund.eastmoney.com/f10/lsjz",
+      "params": {
+        "fundCode": "001027",
+        "pageIndex": "2",
+        "pageSize": "100",
+        "callback": "jQuery"
+      },
+      "status": 200,
+      "duration": 0.047,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T13:01:44.668708",
+      "url": "https://fund.eastmoney.com/data/rankhandler.aspx",
+      "params": {
+        "op": "ph",
+        "dt": "kf",
+        "ft": "hh",
+        "rs": "",
+        "gs": "0",
+        "sc": "6y",
+        "st": "desc",
+        "pi": "1",
+        "pn": "200",
+        "mg": "a",
+        "v": "0.1"
+      },
+      "status": 200,
+      "duration": 2.641,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T13:01:47.312799",
+      "url": "https://fund.eastmoney.com/data/rankhandler.aspx",
+      "params": {
+        "op": "ph",
+        "dt": "kf",
+        "ft": "hh",
+        "rs": "",
+        "gs": "0",
+        "sc": "6y",
+        "st": "desc",
+        "pi": "2",
+        "pn": "200",
+        "mg": "a",
+        "v": "0.1"
+      },
+      "status": 200,
+      "duration": 5.58,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T13:01:52.894224",
+      "url": "https://fund.eastmoney.com/data/rankhandler.aspx",
+      "params": {
+        "op": "ph",
+        "dt": "kf",
+        "ft": "hh",
+        "rs": "",
+        "gs": "0",
+        "sc": "6y",
+        "st": "desc",
+        "pi": "3",
+        "pn": "200",
+        "mg": "a",
+        "v": "0.1"
+      },
+      "status": 200,
+      "duration": 2.403,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T13:01:55.298165",
+      "url": "https://fund.eastmoney.com/data/rankhandler.aspx",
+      "params": {
+        "op": "ph",
+        "dt": "kf",
+        "ft": "gp",
+        "rs": "",
+        "gs": "0",
+        "sc": "6y",
+        "st": "desc",
+        "pi": "1",
+        "pn": "200",
+        "mg": "a",
+        "v": "0.1"
+      },
+      "status": 200,
+      "duration": 1.478,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T13:01:56.779080",
+      "url": "https://push2.eastmoney.com/api/qt/clist/get",
+      "params": {
+        "pn": "1",
+        "pz": "100",
+        "po": "1",
+        "np": "1",
+        "fltt": "2",
+        "invt": "2",
+        "fs": "m:90+t:2",
+        "fields": "f2,f3,f4,f12,f14,f104,f105,f140,f136"
+      },
+      "status": null,
+      "duration": 1.363,
+      "error": "RequestException: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))",
+      "retries": 2
+    },
+    {
+      "timestamp": "2026-06-23T13:01:58.157323",
+      "url": "https://api.fund.eastmoney.com/f10/lsjz",
+      "params": {
+        "fundCode": "007301",
+        "pageIndex": "2",
+        "pageSize": "100",
+        "callback": "jQuery"
+      },
+      "status": 200,
+      "duration": 0.049,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T13:01:58.763039",
+      "url": "https://api.fund.eastmoney.com/f10/lsjz",
+      "params": {
+        "fundCode": "007301",
+        "pageIndex": "2",
+        "pageSize": "100",
+        "callback": "jQuery"
+      },
+      "status": 200,
+      "duration": 0.044,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T13:01:59.363891",
+      "url": "https://api.fund.eastmoney.com/f10/lsjz",
+      "params": {
+        "fundCode": "009068",
+        "pageIndex": "2",
+        "pageSize": "100",
+        "callback": "jQuery"
+      },
+      "status": 200,
+      "duration": 0.052,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T13:01:59.965961",
+      "url": "https://api.fund.eastmoney.com/f10/lsjz",
+      "params": {
+        "fundCode": "009068",
+        "pageIndex": "2",
+        "pageSize": "100",
+        "callback": "jQuery"
+      },
+      "status": 200,
+      "duration": 0.045,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T13:02:00.573437",
+      "url": "https://api.fund.eastmoney.com/f10/lsjz",
+      "params": {
+        "fundCode": "008021",
+        "pageIndex": "2",
+        "pageSize": "100",
+        "callback": "jQuery"
+      },
+      "status": 200,
+      "duration": 0.052,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T13:02:01.177534",
+      "url": "https://api.fund.eastmoney.com/f10/lsjz",
+      "params": {
+        "fundCode": "008021",
+        "pageIndex": "2",
+        "pageSize": "100",
+        "callback": "jQuery"
+      },
+      "status": 200,
+      "duration": 0.049,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T13:02:01.783978",
+      "url": "https://api.fund.eastmoney.com/f10/lsjz",
+      "params": {
+        "fundCode": "000376",
+        "pageIndex": "2",
+        "pageSize": "100",
+        "callback": "jQuery"
+      },
+      "status": 200,
+      "duration": 0.047,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T13:02:02.384927",
+      "url": "https://api.fund.eastmoney.com/f10/lsjz",
+      "params": {
+        "fundCode": "000376",
+        "pageIndex": "2",
+        "pageSize": "100",
+        "callback": "jQuery"
+      },
+      "status": 200,
+      "duration": 0.042,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T13:02:02.989577",
+      "url": "https://api.fund.eastmoney.com/f10/lsjz",
+      "params": {
+        "fundCode": "000593",
+        "pageIndex": "2",
+        "pageSize": "100",
+        "callback": "jQuery"
+      },
+      "status": 200,
+      "duration": 0.041,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T13:02:03.594697",
+      "url": "https://api.fund.eastmoney.com/f10/lsjz",
+      "params": {
+        "fundCode": "000593",
+        "pageIndex": "2",
+        "pageSize": "100",
+        "callback": "jQuery"
+      },
+      "status": 200,
+      "duration": 0.051,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T13:02:04.199672",
+      "url": "https://api.fund.eastmoney.com/f10/lsjz",
+      "params": {
+        "fundCode": "002199",
+        "pageIndex": "2",
+        "pageSize": "100",
+        "callback": "jQuery"
+      },
+      "status": 200,
+      "duration": 0.052,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T13:02:04.805293",
+      "url": "https://api.fund.eastmoney.com/f10/lsjz",
+      "params": {
+        "fundCode": "002199",
+        "pageIndex": "2",
+        "pageSize": "100",
+        "callback": "jQuery"
+      },
+      "status": 200,
+      "duration": 0.053,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T13:02:05.409397",
+      "url": "https://api.fund.eastmoney.com/f10/lsjz",
+      "params": {
+        "fundCode": "001595",
+        "pageIndex": "2",
+        "pageSize": "100",
+        "callback": "jQuery"
+      },
+      "status": 200,
+      "duration": 0.045,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T13:02:06.012257",
+      "url": "https://api.fund.eastmoney.com/f10/lsjz",
+      "params": {
+        "fundCode": "001595",
+        "pageIndex": "2",
+        "pageSize": "100",
+        "callback": "jQuery"
+      },
+      "status": 200,
+      "duration": 0.041,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T13:02:06.617186",
+      "url": "https://api.fund.eastmoney.com/f10/lsjz",
+      "params": {
+        "fundCode": "004069",
+        "pageIndex": "2",
+        "pageSize": "100",
+        "callback": "jQuery"
+      },
+      "status": 200,
+      "duration": 0.04,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T13:02:07.220701",
+      "url": "https://api.fund.eastmoney.com/f10/lsjz",
+      "params": {
+        "fundCode": "004069",
+        "pageIndex": "2",
+        "pageSize": "100",
+        "callback": "jQuery"
+      },
+      "status": 200,
+      "duration": 0.042,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T13:02:07.821298",
+      "url": "https://fund.eastmoney.com/data/rankhandler.aspx",
+      "params": {
+        "op": "ph",
+        "dt": "kf",
+        "ft": "gp",
+        "rs": "",
+        "gs": "0",
+        "sc": "6y",
+        "st": "desc",
+        "pi": "1",
+        "pn": "150",
+        "mg": "a",
+        "v": "0.1"
+      },
+      "status": 200,
+      "duration": 2.032,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T13:02:09.863717",
+      "url": "https://fund.eastmoney.com/data/rankhandler.aspx",
+      "params": {
+        "op": "ph",
+        "dt": "kf",
+        "ft": "zs",
+        "rs": "",
+        "gs": "0",
+        "sc": "zzf",
+        "st": "desc",
+        "pi": "1",
+        "pn": "400",
+        "mg": "a",
+        "v": "0.1"
+      },
+      "status": 200,
+      "duration": 1.987,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T13:02:11.872540",
+      "url": "https://api.fund.eastmoney.com/f10/lsjz",
+      "params": {
+        "fundCode": "001051",
+        "pageIndex": "2",
+        "pageSize": "100",
+        "callback": "jQuery"
+      },
+      "status": 200,
+      "duration": 0.057,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T13:02:12.477626",
+      "url": "https://api.fund.eastmoney.com/f10/lsjz",
+      "params": {
+        "fundCode": "001051",
+        "pageIndex": "2",
+        "pageSize": "100",
+        "callback": "jQuery"
+      },
+      "status": 200,
+      "duration": 0.043,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T13:02:13.078374",
+      "url": "https://api.fund.eastmoney.com/f10/lsjz",
+      "params": {
+        "fundCode": "005051",
+        "pageIndex": "2",
+        "pageSize": "100",
+        "callback": "jQuery"
+      },
+      "status": 200,
+      "duration": 0.041,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T13:02:13.683485",
+      "url": "https://api.fund.eastmoney.com/f10/lsjz",
+      "params": {
+        "fundCode": "005051",
+        "pageIndex": "2",
+        "pageSize": "100",
+        "callback": "jQuery"
+      },
+      "status": 200,
+      "duration": 0.047,
+      "error": null,
+      "retries": 0
+    }
+  ]
+}

@@ -111,7 +111,16 @@ TYPE_ABBR = {
     "指数型-股票": "股票指数", "股票型": "主动股票",
     "债券型-长债": "长债", "债券型-中短债": "中短债",
     "债券型-混合二级": "二级债", "债券型-混合一级": "一级债",
+    "债券型-纯债": "纯债",
     "货币型-普通货币": "货币",
+}
+
+# 债券基金类型分类
+BOND_TYPE_MAP = {
+    "长债": ["债券型-长债", "债券型-纯债"],
+    "中短债": ["债券型-中短债"],
+    "二级债": ["债券型-混合二级"],
+    "一级债": ["债券型-混合一级"],
 }
 
 # 热门行业 ETF 关键词
@@ -231,8 +240,8 @@ def fund_list() -> list[dict]:
     print("  ⏳ 拉取全量基金列表...", end=" ")
     r = em_get("http://fund.eastmoney.com/js/fundcode_search.js", timeout=30)
     text = r.text.replace("﻿", "")
-    # 修复 ReDoS: 使用严格字符类替代 (.*?)，限制长度
-    matches = re.findall(r'\["([^"]{1,20})","([^"]{1,50})","([^"]{1,100})","([^"]{1,30})","([^"]{1,10})"\]', text)
+    # 修复：使用更宽松的正则，避免长度限制导致匹配失败
+    matches = re.findall(r'\["(\d{6})","([^"]+)","([^"]+)","([^"]+)","([^"]+)"\]', text)
     funds = [{"code": m[0], "pinyin": m[1], "name": m[2], "type": m[3]} for m in matches]
     _CACHE["fund_list"] = funds
     print(f"{len(funds)} 只")
@@ -394,13 +403,15 @@ def score_funds(funds: list[dict], top_n: int = 30) -> list[dict]:
         return [(v - mn) / (mx - mn) for v in vals]
 
     ret_1y = [f.get("ret_1y") or 0 for f in funds]
-    ret_3y = [f.get("ret_3y") or 0 for f in funds]
     ret_6m = [f.get("ret_6m") or 0 for f in funds]
+    ret_3m = [f.get("ret_3m") or 0 for f in funds]
+    ret_1m = [f.get("monthly") or 0 for f in funds]
     sizes = [f.get("fund_size") or 0 for f in funds]
 
     n_1y = norm(ret_1y)
-    n_3y = norm(ret_3y)
     n_6m = norm(ret_6m)
+    n_3m = norm(ret_3m)
+    n_1m = norm(ret_1m)
     n_size = norm(sizes)
 
     for i, f in enumerate(funds):
@@ -419,7 +430,7 @@ def score_funds(funds: list[dict], top_n: int = 30) -> list[dict]:
         fee_penalty = min(fee_val / ScoringConfig.FEE_DIVISOR, ScoringConfig.MAX_FEE_PENALTY)
 
         f["score"] = round(
-            0.30 * n_1y[i] + 0.20 * n_3y[i] + 0.15 * n_6m[i]
+            0.35 * n_1y[i] + 0.20 * n_6m[i] + 0.15 * n_3m[i] + 0.05 * n_1m[i]
             + 0.10 * (1 - n_size[i])
             - 0.15 * fee_penalty - 0.10 * size_penalty,
             4
@@ -454,6 +465,51 @@ def build_fund_index() -> dict[str, list[dict]]:
     _CACHE["fund_index"] = index
     logger.info(f"基金索引构建完成，索引关键词: {len(index_keywords)} 个")
     return index
+
+
+def find_sector_top_funds(sector: str, rank_data: list[dict], top_n: int = 10) -> list[dict]:
+    """
+    根据板块名称，从主动管理基金中筛选该板块的头部基金
+    通过基金名称关键词匹配 + 业绩排名来确定
+
+    Args:
+        sector: 板块名称，如 "消费"、"科技"、"医药"
+        rank_data: 基金排名数据（混合型/股票型）
+        top_n: 返回前N只基金
+
+    Returns:
+        该板块的头部基金列表
+    """
+    if sector not in SECTOR_KEYWORDS:
+        return []
+
+    keywords = SECTOR_KEYWORDS[sector]
+    ftype = fund_type_map()
+
+    # 筛选主动管理基金（排除指数基金和ETF）
+    active_funds = [
+        f for f in rank_data
+        if ftype.get(f["code"], "") in ("混合型-偏股", "混合型-灵活", "股票型")
+        and "ETF" not in f.get("name", "")
+        and "指数" not in f.get("name", "")
+        and "联接" not in f.get("name", "")
+    ]
+
+    # 按名称关键词匹配
+    sector_funds = []
+    for fund in active_funds:
+        fund_name = fund.get("name", "")
+        for kw in keywords:
+            if kw in fund_name:
+                fund["matched_keyword"] = kw
+                fund["type"] = ftype.get(fund["code"], "混合型")
+                sector_funds.append(fund)
+                break
+
+    # 评分排序
+    sector_funds = score_funds(sector_funds, top_n=top_n)
+
+    return sector_funds
 
 
 def find_etf(keyword: str, exclude_faqi: bool = True) -> Optional[dict]:
@@ -504,12 +560,13 @@ def enrich_with_ranking(funds: list[dict], rank_data: list[dict], nav_fallback: 
     for fund in funds:
         if fund["code"] in rank_map:
             r = rank_map[fund["code"]]
-            for key in ["ret_1y", "ret_3y", "ret_6m", "ret_3m", "ret_2y",
+            for key in ["ret_1y", "ret_6m", "ret_3m", "ret_2y",
                          "daily", "weekly", "monthly", "fund_size", "fee"]:
                 rv = r.get(key)
                 if rv is not None and fund.get(key) is None:
                     fund[key] = rv
-        if fund.get("ret_1y") is None:
+        # 检查关键收益率数据是否缺失
+        if fund.get("ret_1y") is None or fund.get("ret_6m") is None or fund.get("ret_3m") is None:
             missing.append(fund)
 
     if nav_fallback and missing:
@@ -521,8 +578,8 @@ def enrich_with_ranking(funds: list[dict], rank_data: list[dict], nav_fallback: 
 # 6b. NAV 历史回退 — 对缺失收益率数据的基金补充计算
 # ============================================================
 def enrich_with_nav_fallback(funds: list[dict]) -> list[dict]:
-    """对 ret_1y 仍为空的基金，通过净值历史计算近1年收益"""
-    need_fallback = [f for f in funds if not f.get("ret_1y")]
+    """对收益率数据缺失的基金，通过净值历史计算补充"""
+    need_fallback = [f for f in funds if not f.get("ret_1y") or not f.get("ret_6m") or not f.get("ret_3m")]
     if not need_fallback:
         return funds
 
@@ -531,9 +588,10 @@ def enrich_with_nav_fallback(funds: list[dict]) -> list[dict]:
         code = fund["code"]
         nav_data = fund_nav_fast(code)
         if nav_data:
-            fund["ret_1y"] = nav_data.get("ret_1y", 0)
-            fund["ret_3y"] = nav_data.get("ret_3y", 0)
-            fund["ret_6m"] = nav_data.get("ret_6m", 0)
+            fund["ret_1y"] = nav_data.get("ret_1y", fund.get("ret_1y", 0))
+            fund["ret_6m"] = nav_data.get("ret_6m", fund.get("ret_6m", 0))
+            fund["ret_3m"] = nav_data.get("ret_3m", fund.get("ret_3m", 0))
+            fund["monthly"] = nav_data.get("ret_1m", fund.get("monthly", 0))
             fund["fund_size"] = nav_data.get("fund_size", fund.get("fund_size", 0))
             fund["fee"] = nav_data.get("fee", fund.get("fee", ""))
     print("done")
@@ -541,11 +599,12 @@ def enrich_with_nav_fallback(funds: list[dict]) -> list[dict]:
 
 
 def fund_nav_fast(code: str) -> Optional[dict]:
-    """快速获取基金近期净值用于计算收益（取最新 + 半年前 + 1年前 + 3年前 点位）"""
+    """快速获取基金近期净值用于计算收益（取最新 + 1个月 + 3个月 + 6个月 + 1年前 点位）"""
     try:
         url = "https://api.fund.eastmoney.com/f10/lsjz"
-        # 先拿最新净值
-        params = {"fundCode": code, "pageIndex": "1", "pageSize": "3", "callback": "jQuery"}
+
+        # 获取足够的历史数据（至少200天以覆盖半年）
+        params = {"fundCode": code, "pageIndex": "1", "pageSize": "200", "callback": "jQuery"}
         r = em_get(url, params=params,
                     headers={"Referer": "https://fundf10.eastmoney.com/"}, timeout=10)
         text = r.text
@@ -558,34 +617,45 @@ def fund_nav_fast(code: str) -> Optional[dict]:
         latest_nav = float(nav_list[0]["DWJZ"])
         latest_date = nav_list[0]["FSRQ"]
 
-        # 获取半年前的净值（大概125个交易日 ≈ 180天）
+        # 1个月收益（约20个交易日）
+        ret_1m = 0
+        if len(nav_list) > 20:
+            old_1m = float(nav_list[min(20, len(nav_list)-1)]["DWJZ"])
+            ret_1m = round((latest_nav - old_1m) / old_1m * 100, 1)
+
+        # 3个月收益（约62个交易日）
+        ret_3m = 0
+        if len(nav_list) > 62:
+            old_3m = float(nav_list[min(62, len(nav_list)-1)]["DWJZ"])
+            ret_3m = round((latest_nav - old_3m) / old_3m * 100, 1)
+
+        # 6个月收益（约125个交易日）
         ret_6m = 0
-        params["pageIndex"] = "1"
-        params["pageSize"] = "180"
-        r2 = em_get(url, params=params,
-                     headers={"Referer": "https://fundf10.eastmoney.com/"}, timeout=10)
-        data2 = json.loads(r2.text[r2.text.index("(") + 1:r2.text.rindex(")")])
-        nav_list_6m = data2.get("Data", {}).get("LSJZList", [])
-        if len(nav_list_6m) > ScoringConfig.TRADING_DAYS_6M:
-            old_6m = float(nav_list_6m[-1]["DWJZ"])
+        if len(nav_list) > 125:
+            old_6m = float(nav_list[min(125, len(nav_list)-1)]["DWJZ"])
             ret_6m = round((latest_nav - old_6m) / old_6m * 100, 1)
 
         # 获取1年前的净值（~250个交易日）
         ret_1y = 0
-        for page in range(1, 4):
-            params["pageIndex"] = str(page)
-            params["pageSize"] = "100"
-            r3 = em_get(url, params=params,
-                         headers={"Referer": "https://fundf10.eastmoney.com/"}, timeout=10)
-            data3 = json.loads(r3.text[r3.text.index("(") + 1:r3.text.rindex(")")])
-            nav_list_1y = data3.get("Data", {}).get("LSJZList", [])
-            if len(nav_list_1y) >= ScoringConfig.TRADING_DAYS_1Y - (page - 1) * 100 or page == 3:
-                # Use earliest NAV in the batch
-                old_1y = float(nav_list_1y[-1]["DWJZ"])
-                ret_1y = round((latest_nav - old_1y) / old_1y * 100, 1)
-                break
+        if len(nav_list) > 250:
+            # 第一批数据就够了
+            old_1y = float(nav_list[-1]["DWJZ"])
+            ret_1y = round((latest_nav - old_1y) / old_1y * 100, 1)
+        else:
+            # 需要获取更多数据
+            for page in range(2, 4):
+                params["pageIndex"] = str(page)
+                params["pageSize"] = "100"
+                r3 = em_get(url, params=params,
+                             headers={"Referer": "https://fundf10.eastmoney.com/"}, timeout=10)
+                data3 = json.loads(r3.text[r3.text.index("(") + 1:r3.text.rindex(")")])
+                nav_list_1y = data3.get("Data", {}).get("LSJZList", [])
+                if nav_list_1y:
+                    old_1y = float(nav_list_1y[-1]["DWJZ"])
+                    ret_1y = round((latest_nav - old_1y) / old_1y * 100, 1)
+                    break
 
-        return {"ret_1y": ret_1y, "ret_3y": 0, "ret_6m": ret_6m, "fund_size": 0, "fee": ""}
+        return {"ret_1y": ret_1y, "ret_3m": ret_3m, "ret_6m": ret_6m, "ret_1m": ret_1m, "fund_size": 0, "fee": ""}
     except (NetworkError, json.JSONDecodeError, KeyError, ValueError, IndexError) as e:
         logger.warning(f"NAV 回退失败 {code}: {e}")
         return None
@@ -600,36 +670,79 @@ def v1_defensive() -> dict:
     print("\n🛡️  V1 稳健版...")
     ftype = fund_type_map()
 
-    # 债券排名 — 使用批量请求替代多次调用
-    bond_rank = fund_ranking_batch("zq", sort_by="zzf", pages=3, page_size=200)
+    # 债券排名 — 多页拉取以获取各类型债券基金
+    bond_rank = fund_ranking_batch("zq", sort_by="zzf", pages=5, page_size=200)
 
-    long_bond = [f for f in bond_rank if "长债" in ftype.get(f["code"], "")]
-    short_bond = [f for f in bond_rank if "中短债" in ftype.get(f["code"], "")]
-    for f in long_bond + short_bond:
-        f["type"] = ftype.get(f["code"], "债券型")
-    long_bond = score_funds(long_bond, top_n=4)
-    short_bond = score_funds(short_bond, top_n=3)
+    # 使用更宽松的筛选条件
+    long_bond = []
+    short_bond = []
+    mixed_bond_from_zq = []
 
-    # 偏债混合 — 也拉更多
+    for f in bond_rank:
+        ft = ftype.get(f["code"], "")
+        if "纯债" in ft or "长债" in ft:
+            f["type"] = TYPE_ABBR.get(ft, "纯债")
+            long_bond.append(f)
+        elif "中短债" in ft:
+            f["type"] = TYPE_ABBR.get(ft, "中短债")
+            short_bond.append(f)
+        elif "混合二级" in ft or "混合一级" in ft:
+            f["type"] = TYPE_ABBR.get(ft, "债券型")
+            mixed_bond_from_zq.append(f)
+
+    # 如果纯债/长债不够，用一级债补充
+    if len(long_bond) < 10:
+        for f in mixed_bond_from_zq:
+            ft = ftype.get(f["code"], "")
+            if "一级" in ft:
+                f["type"] = "一级债"
+                long_bond.append(f)
+                if len(long_bond) >= 10:
+                    break
+
+    long_bond = score_funds(long_bond, top_n=10)
+
+    # 如果中短债不够，用二级债中业绩较稳的补充
+    if len(short_bond) < 10:
+        # 从二级债中选业绩相对保守的（1年收益率较低的）
+        conservative_bonds = [f for f in mixed_bond_from_zq if (f.get("ret_1y") or 0) < 30]
+        for f in conservative_bonds:
+            f["type"] = "短债增强"
+            short_bond.append(f)
+            if len(short_bond) >= 10:
+                break
+
+    short_bond = score_funds(short_bond, top_n=10)
+
+    # 偏债混合 — 从混合型基金中筛选
     hh_rank = fund_ranking("hh", sort_by="zzf", page_size=200)
-    if len([f for f in hh_rank if "偏债" in ftype.get(f["code"], "")]) < 2:
+    if len([f for f in hh_rank if "偏债" in ftype.get(f["code"], "")]) < 10:
         hh_rank += fund_ranking("hh", sort_by="zzf", page_size=200, page=2)
+
     mixed_bond = [f for f in hh_rank if "偏债" in ftype.get(f["code"], "")]
+
+    # 如果偏债混合不够，用二级债基金补充
+    if len(mixed_bond) < 10:
+        aggressive_bonds = [f for f in mixed_bond_from_zq if (f.get("ret_1y") or 0) >= 30]
+        mixed_bond.extend(aggressive_bonds[:10])
+
     for f in mixed_bond:
-        f["type"] = ftype.get(f["code"], "混合型")
-    mixed_bond = score_funds(mixed_bond, top_n=2)
+        f["type"] = TYPE_ABBR.get(ftype.get(f["code"], ""), "偏债混合")
+    mixed_bond = score_funds(mixed_bond, top_n=10)
 
     # 货币基金
-    money_funds = [f for f in fund_list() if f["type"] == "货币型-普通货币"][:3]
-    money_funds = score_funds(money_funds, top_n=2)
+    money_funds = [f for f in fund_list() if f["type"] == "货币型-普通货币"][:15]
+    for f in money_funds:
+        f["type"] = "货币"
+    money_funds = score_funds(money_funds, top_n=10)
 
     return {
         "name": "V1 稳健版",
         "desc": "债券固收为主(70%) + 偏债混合(20%) + 货币(10%)，适合保守型",
         "risk": "低风险 ⭐",
         "allocations": [
-            {"role": "长债底仓", "funds": long_bond[:3], "weight": 0.35},
-            {"role": "中短债增强", "funds": short_bond[:2], "weight": 0.25},
+            {"role": "长债底仓", "funds": long_bond, "weight": 0.35},
+            {"role": "中短债增强", "funds": short_bond, "weight": 0.25},
             {"role": "偏债混合", "funds": mixed_bond, "weight": 0.20},
             {"role": "货币现金", "funds": money_funds, "weight": 0.20},
         ],
@@ -650,21 +763,21 @@ def v2_balanced() -> dict:
         if etf:
             broad_funds.append(etf)
     broad_funds = enrich_with_ranking(broad_funds, idx_rank)
-    broad_funds = score_funds(broad_funds, top_n=3)
+    broad_funds = score_funds(broad_funds, top_n=10)
 
     # 偏股混合
     hh_rank = fund_ranking("hh", sort_by="zzf", page_size=200)
     equity = [f for f in hh_rank if ftype.get(f["code"], "") in ("混合型-偏股", "混合型-灵活")]
     for f in equity:
         f["type"] = ftype.get(f["code"], "混合型")
-    equity = score_funds(equity, top_n=3)
+    equity = score_funds(equity, top_n=10)
 
     # 纯债 — 使用批量请求
     bond_rank = fund_ranking_batch("zq", sort_by="zzf", pages=2, page_size=200)
-    bonds = [f for f in bond_rank if "长债" in ftype.get(f["code"], "")]
+    bonds = [f for f in bond_rank if "长债" in ftype.get(f["code"], "") or "纯债" in ftype.get(f["code"], "")]
     for f in bonds:
         f["type"] = ftype.get(f["code"], "债券型")
-    bonds = score_funds(bonds, top_n=3)
+    bonds = score_funds(bonds, top_n=10)
 
     return {
         "name": "V2 均衡版",
@@ -673,15 +786,14 @@ def v2_balanced() -> dict:
         "allocations": [
             {"role": "宽基指数", "funds": broad_funds, "weight": 0.30},
             {"role": "偏股混合", "funds": equity, "weight": 0.20},
-            {"role": "纯债底仓", "funds": bonds[:2], "weight": 0.30},
-            {"role": "中短债", "funds": bonds[2:3], "weight": 0.10},
+            {"role": "纯债底仓", "funds": bonds, "weight": 0.40},
             {"role": "货币现金", "funds": [], "weight": 0.10},
         ],
     }
 
 
 def v3_growth() -> dict:
-    """V3 成长版：权益为主"""
+    """V3 成长版：权益为主（含板块头部基金）"""
     print("\n🚀  V3 成长版...")
     ftype = fund_type_map()
 
@@ -708,14 +820,29 @@ def v3_growth() -> dict:
             sector_picks.append(best)
 
     sector_picks = enrich_with_ranking(sector_picks, idx_rank)
-    sector_picks = score_funds(sector_picks, top_n=6)
+    sector_picks = score_funds(sector_picks, top_n=10)
 
-    # 主动权益
-    hh_rank = fund_ranking("hh", sort_by="6y", page_size=200)
+    # 主动权益 + 为热门板块添加头部基金
+    hh_rank = fund_ranking_batch("hh", sort_by="6y", pages=3, page_size=200)
+    gp_rank = fund_ranking("gp", sort_by="6y", page_size=200)
+    all_active_rank = hh_rank + gp_rank
+
+    # 为TOP3热门板块各选10只头部基金
+    sector_detail = []
+    top_sectors = ["消费", "科技", "医药"]  # 可根据HOT_SECTORS动态调整
+    for sector in top_sectors:
+        sector_funds = find_sector_top_funds(sector, all_active_rank, top_n=10)
+        if sector_funds:
+            sector_detail.append({
+                "sector": sector,
+                "funds": sector_funds
+            })
+
+    # 全市场主动权益精选
     active = [f for f in hh_rank if ftype.get(f["code"], "") in ("混合型-偏股", "股票型")]
     for f in active:
         f["type"] = ftype.get(f["code"], "混合型")
-    active = score_funds(active, top_n=3)
+    active = score_funds(active, top_n=10)
 
     return {
         "name": "V3 成长版",
@@ -726,11 +853,12 @@ def v3_growth() -> dict:
             {"role": "主动权益精选", "funds": active, "weight": 0.30},
             {"role": "货币/短债", "funds": [], "weight": 0.20},
         ],
+        "sector_details": sector_detail  # 新增：各板块头部基金明细
     }
 
 
 def v4_rotation() -> dict:
-    """V4 行业轮动版：实时行业排名驱动"""
+    """V4 行业轮动版：实时行业排名驱动（含板块头部基金）"""
     print("\n🔄  V4 行业轮动版...")
 
     # 获取实时行业排名 — 使用多个备用接口
@@ -806,7 +934,33 @@ def v4_rotation() -> dict:
                 break
 
     rotation_funds = enrich_with_ranking(rotation_funds, idx_rank)
-    rotation_funds = score_funds(rotation_funds, top_n=6)
+    rotation_funds = score_funds(rotation_funds, top_n=10)
+
+    # 为强势行业添加头部主动基金
+    hh_rank = fund_ranking_batch("hh", sort_by="6y", pages=2, page_size=200)
+    gp_rank = fund_ranking("gp", sort_by="6y", page_size=150)
+    all_active_rank = hh_rank + gp_rank
+
+    # 为TOP5强势行业各选10只头部基金
+    sector_detail = []
+    for ind in top_ind[:5]:
+        sector_name = ind["name"]
+        # 将行业名映射到板块关键词
+        sector_key = None
+        for key, keywords in SECTOR_KEYWORDS.items():
+            if any(kw in sector_name for kw in keywords) or sector_name in keywords:
+                sector_key = key
+                break
+
+        if sector_key:
+            sector_funds = find_sector_top_funds(sector_key, all_active_rank, top_n=10)
+            if sector_funds:
+                sector_detail.append({
+                    "sector": sector_name,
+                    "sector_key": sector_key,
+                    "change_pct": ind["change_pct"],
+                    "funds": sector_funds
+                })
 
     hot_names = ", ".join([i["name"] for i in top_ind[:5]])
     return {
@@ -818,6 +972,7 @@ def v4_rotation() -> dict:
             {"role": "行业轮动ETF", "funds": rotation_funds, "weight": 0.80},
             {"role": "货币/短债", "funds": [], "weight": 0.20},
         ],
+        "sector_details": sector_detail  # 新增：强势行业头部基金明细
     }
 
 
@@ -883,20 +1038,51 @@ def print_portfolio(p: dict):
         if not funds:
             print(f"     (自行选择货币基金/短债基金)")
             continue
-        hdr = f"     {'代码':<8} {'名称':<30} {'类型':<8} {'1年%':>7} {'3年%':>7} {'规模(亿)':>9} {'费率':>6}"
+        hdr = f"     {'代码':<8} {'名称':<30} {'类型':<8} {'1月%':>6} {'3月%':>6} {'6月%':>6} {'1年%':>6} {'规模(亿)':>9} {'费率':>6}"
         print(hdr)
-        print(f"     {'-'*78}")
+        print(f"     {'-'*82}")
         for f in funds:
             code = f.get("code", "")
             name = f.get("name", "")[:28]
             ft_raw = f.get("type", "")
             ft = TYPE_ABBR.get(ft_raw, ft_raw)[:8]
-            r1 = f.get("ret_1y") or 0
-            r3 = f.get("ret_3y") or 0
+            r1m = f.get("monthly") or 0
+            r3m = f.get("ret_3m") or 0
+            r6m = f.get("ret_6m") or 0
+            r1y = f.get("ret_1y") or 0
             sz = (f.get("fund_size") or 0) / 10000  # 万元→亿
             fee = f.get("fee", "-") or "-"
             sc = f.get("score", 0) or 0
-            print(f"     {code:<8} {name:<30} {ft:<8} {r1:>+6.1f} {r3:>+6.1f} {sz:>8.1f} {fee:>6}")
+            print(f"     {code:<8} {name:<30} {ft:<8} {r1m:>+5.1f} {r3m:>+5.1f} {r6m:>+5.1f} {r1y:>+5.1f} {sz:>8.1f} {fee:>6}")
+
+    # 新增：板块头部基金明细
+    if "sector_details" in p and p["sector_details"]:
+        print(f"\n  💎 各板块头部主动管理基金:")
+        for sector_info in p["sector_details"]:
+            sector = sector_info["sector"]
+            funds = sector_info["funds"]
+            change_info = ""
+            if "change_pct" in sector_info:
+                change_info = f" (今日 {sector_info['change_pct']:+.1f}%)"
+            print(f"\n  ▸ 【{sector}】{change_info}")
+            if not funds:
+                print(f"     (暂无匹配基金)")
+                continue
+            hdr = f"     {'代码':<8} {'名称':<30} {'类型':<8} {'1月%':>6} {'3月%':>6} {'6月%':>6} {'1年%':>6} {'规模(亿)':>9} {'费率':>6}"
+            print(hdr)
+            print(f"     {'-'*82}")
+            for f in funds:
+                code = f.get("code", "")
+                name = f.get("name", "")[:28]
+                ft_raw = f.get("type", "")
+                ft = TYPE_ABBR.get(ft_raw, ft_raw)[:8]
+                r1m = f.get("monthly") or 0
+                r3m = f.get("ret_3m") or 0
+                r6m = f.get("ret_6m") or 0
+                r1y = f.get("ret_1y") or 0
+                sz = (f.get("fund_size") or 0) / 10000  # 万元→亿
+                fee = f.get("fee", "-") or "-"
+                print(f"     {code:<8} {name:<30} {ft:<8} {r1m:>+5.1f} {r3m:>+5.1f} {r6m:>+5.1f} {r1y:>+5.1f} {sz:>8.1f} {fee:>6}")
 
     print()
 
