@@ -1,0 +1,17 @@
+{
+  "total_calls": 1,
+  "successful_calls": 1,
+  "failed_calls": 0,
+  "total_duration": 0.371,
+  "calls": [
+    {
+      "timestamp": "2026-06-23T14:02:52.470150",
+      "url": "http://fund.eastmoney.com/js/fundcode_search.js",
+      "params": null,
+      "status": 200,
+      "duration": 0.371,
+      "error": null,
+      "retries": 0
+    }
+  ]
+}

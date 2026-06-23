@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "fund-advisor": {
+      "command": "python3",
+      "args": [
+        "/Users/dusiyuan/Documents/fundRecord/fund_advisor_mcp.py",
+        "--mcp"
+      ],
+      "env": {
+        "PYTHONPATH": "/Users/dusiyuan/Documents/fundRecord",
+        "PYTHONUNBUFFERED": "1"
+      }
+    }
+  }
+}
