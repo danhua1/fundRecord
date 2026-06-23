@@ -61,14 +61,33 @@ class ScoringConfig:
 
 SESSION = requests.Session()
 SESSION.headers.update({"User-Agent": random.choice(USER_AGENTS)})
+# 禁用代理，避免代理连接问题
+SESSION.trust_env = False
 _LAST_CALL = 0
 _CALL_INTERVAL = 0.6
 _CACHE = {}
+_API_CALL_LOG = []  # 记录所有API调用
 
 def cleanup_session():
-    """程序退出时清理 Session"""
+    """程序退出时清理 Session 并保存调用日志"""
     SESSION.close()
     logger.info("Session 已清理")
+
+    # 保存API调用日志
+    if _API_CALL_LOG:
+        log_file = f"api_calls_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+        try:
+            with open(log_file, 'w', encoding='utf-8') as f:
+                json.dump({
+                    "total_calls": len(_API_CALL_LOG),
+                    "successful_calls": len([c for c in _API_CALL_LOG if c.get("status") == 200]),
+                    "failed_calls": len([c for c in _API_CALL_LOG if c.get("error")]),
+                    "total_duration": sum(c.get("duration", 0) for c in _API_CALL_LOG),
+                    "calls": _API_CALL_LOG
+                }, f, ensure_ascii=False, indent=2)
+            logger.info(f"API调用日志已保存到: {log_file}")
+        except Exception as e:
+            logger.error(f"保存API调用日志失败: {e}")
 
 atexit.register(cleanup_session)
 
@@ -141,33 +160,65 @@ def em_get(url, params=None, headers=None, timeout=15, max_retries=3):
     if headers:
         h.update(headers)
 
+    call_start = time.time()
+    call_log = {
+        "timestamp": datetime.now().isoformat(),
+        "url": url,
+        "params": params,
+        "status": None,
+        "duration": None,
+        "error": None,
+        "retries": 0
+    }
+
     for attempt in range(max_retries):
         try:
             logger.debug(f"请求 {url}, 参数: {params}, 尝试: {attempt + 1}/{max_retries}")
-            r = SESSION.get(url, params=params, headers=h, timeout=timeout)
-            r.raise_for_status()  # 检查 HTTP 状态码
+            r = SESSION.get(url, params=params, headers=h, timeout=timeout, proxies={})
+            r.raise_for_status()
             r.encoding = "utf-8"
+
+            # 记录成功调用
+            call_log["status"] = r.status_code
+            call_log["duration"] = round(time.time() - call_start, 3)
+            call_log["retries"] = attempt
+            _API_CALL_LOG.append(call_log)
+            logger.info(f"✓ API调用成功 {url[:50]}... 耗时:{call_log['duration']}s 状态:{r.status_code}")
+
             return r
         except requests.Timeout as e:
             logger.warning(f"请求超时 {url}: {e}")
+            call_log["retries"] = attempt + 1
             if attempt < max_retries - 1:
-                wait_time = min(2 ** attempt, 10)  # 指数退避，上限10秒
+                wait_time = min(2 ** attempt, 10)
                 logger.info(f"等待 {wait_time}s 后重试...")
                 time.sleep(wait_time)
             else:
+                call_log["error"] = f"Timeout: {str(e)}"
+                call_log["duration"] = round(time.time() - call_start, 3)
+                _API_CALL_LOG.append(call_log)
                 raise NetworkError(f"请求超时，已重试 {max_retries} 次: {url}") from e
         except requests.HTTPError as e:
             logger.error(f"HTTP 错误 {url}: {e}")
+            call_log["status"] = e.response.status_code if e.response else None
+            call_log["retries"] = attempt + 1
             if attempt < max_retries - 1 and e.response.status_code >= 500:
                 wait_time = min(2 ** attempt, 10)
                 time.sleep(wait_time)
             else:
+                call_log["error"] = f"HTTPError {e.response.status_code}: {str(e)}"
+                call_log["duration"] = round(time.time() - call_start, 3)
+                _API_CALL_LOG.append(call_log)
                 raise NetworkError(f"HTTP 错误 {e.response.status_code}: {url}") from e
         except requests.RequestException as e:
             logger.error(f"请求异常 {url}: {e}")
+            call_log["retries"] = attempt + 1
             if attempt < max_retries - 1:
                 time.sleep(min(2 ** attempt, 10))
             else:
+                call_log["error"] = f"RequestException: {str(e)}"
+                call_log["duration"] = round(time.time() - call_start, 3)
+                _API_CALL_LOG.append(call_log)
                 raise NetworkError(f"请求失败: {url}") from e
 
 
@@ -682,8 +733,10 @@ def v4_rotation() -> dict:
     """V4 行业轮动版：实时行业排名驱动"""
     print("\n🔄  V4 行业轮动版...")
 
-    # 获取实时行业排名
+    # 获取实时行业排名 — 使用多个备用接口
     industries = []
+
+    # 方案1: 尝试push2接口
     try:
         url = "https://push2.eastmoney.com/api/qt/clist/get"
         params = {
@@ -691,7 +744,7 @@ def v4_rotation() -> dict:
             "fltt": "2", "invt": "2", "fs": "m:90+t:2",
             "fields": "f2,f3,f4,f12,f14,f104,f105,f140,f136",
         }
-        r = em_get(url, params=params, timeout=15)
+        r = em_get(url, params=params, timeout=20, max_retries=2)
         data = r.json()
         for i, item in enumerate(data.get("data", {}).get("diff", [])):
             industries.append({
@@ -705,7 +758,25 @@ def v4_rotation() -> dict:
             })
         print(f"    实时行业排名: {len(industries)} 个行业")
     except Exception as e:
-        print(f"    ⚠️ 行业排名失败: {e}")
+        logger.warning(f"push2接口失败: {e}，尝试备用方案...")
+
+        # 方案2: 使用预定义热门行业列表作为降级方案
+        try:
+            fallback_industries = [
+                {"name": "半导体", "change_pct": 0, "rank": 1, "code": "", "up_count": 0, "down_count": 0, "leader": "-"},
+                {"name": "新能源", "change_pct": 0, "rank": 2, "code": "", "up_count": 0, "down_count": 0, "leader": "-"},
+                {"name": "人工智能", "change_pct": 0, "rank": 3, "code": "", "up_count": 0, "down_count": 0, "leader": "-"},
+                {"name": "医药", "change_pct": 0, "rank": 4, "code": "", "up_count": 0, "down_count": 0, "leader": "-"},
+                {"name": "消费", "change_pct": 0, "rank": 5, "code": "", "up_count": 0, "down_count": 0, "leader": "-"},
+                {"name": "军工", "change_pct": 0, "rank": 6, "code": "", "up_count": 0, "down_count": 0, "leader": "-"},
+                {"name": "银行", "change_pct": 0, "rank": 7, "code": "", "up_count": 0, "down_count": 0, "leader": "-"},
+                {"name": "证券", "change_pct": 0, "rank": 8, "code": "", "up_count": 0, "down_count": 0, "leader": "-"},
+            ]
+            industries = fallback_industries
+            print(f"    ⚠️ 使用备用行业列表（实时数据暂不可用）")
+        except Exception as e2:
+            logger.error(f"备用方案也失败: {e2}")
+            print(f"    ⚠️ 行业数据获取失败，使用默认配置")
 
     # 取当日涨幅 TOP 行业
     top_ind = sorted(industries, key=lambda x: -x["change_pct"])[:10]
@@ -861,6 +932,18 @@ def main():
         print(f"  {p['name']:<16} {p['risk']:<14} {p['desc'][:48]}")
     print()
     print("  ⚠️  免责声明：以上数据仅供参考，不构成投资建议。投资有风险，入市需谨慎。")
+    print()
+
+    # 输出API调用统计
+    print(f"{'='*85}")
+    print(f"  📊 API调用统计")
+    print(f"{'='*85}")
+    success_count = len([c for c in _API_CALL_LOG if c.get("status") == 200])
+    failed_count = len([c for c in _API_CALL_LOG if c.get("error")])
+    total_duration = sum(c.get("duration", 0) for c in _API_CALL_LOG)
+    print(f"  总调用次数: {len(_API_CALL_LOG)}")
+    print(f"  成功: {success_count}  失败: {failed_count}")
+    print(f"  总耗时: {total_duration:.2f}s  平均: {total_duration/len(_API_CALL_LOG) if _API_CALL_LOG else 0:.3f}s/次")
     print()
 
 

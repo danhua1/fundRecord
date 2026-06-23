@@ -1,0 +1,35 @@
+{
+  "total_calls": 2,
+  "successful_calls": 1,
+  "failed_calls": 1,
+  "total_duration": 3.894,
+  "calls": [
+    {
+      "timestamp": "2026-06-22T15:52:32.602740",
+      "url": "http://fund.eastmoney.com/js/fundcode_search.js",
+      "params": null,
+      "status": 200,
+      "duration": 0.391,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-22T15:52:33.207809",
+      "url": "https://push2.eastmoney.com/api/qt/clist/get",
+      "params": {
+        "pn": "1",
+        "pz": "10",
+        "po": "1",
+        "np": "1",
+        "fltt": "2",
+        "invt": "2",
+        "fs": "m:90+t:2",
+        "fields": "f2,f3,f4,f12,f14,f104,f105,f140,f136"
+      },
+      "status": null,
+      "duration": 3.503,
+      "error": "RequestException: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))",
+      "retries": 3
+    }
+  ]
+}

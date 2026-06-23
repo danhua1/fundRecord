@@ -1,0 +1,224 @@
+{
+  "total_calls": 11,
+  "successful_calls": 10,
+  "failed_calls": 1,
+  "total_duration": 14.472,
+  "calls": [
+    {
+      "timestamp": "2026-06-23T08:13:18.128187",
+      "url": "http://fund.eastmoney.com/js/fundcode_search.js",
+      "params": null,
+      "status": 200,
+      "duration": 0.426,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T08:13:18.728867",
+      "url": "https://fund.eastmoney.com/data/rankhandler.aspx",
+      "params": {
+        "op": "ph",
+        "dt": "kf",
+        "ft": "zq",
+        "rs": "",
+        "gs": "0",
+        "sc": "zzf",
+        "st": "desc",
+        "pi": "1",
+        "pn": "200",
+        "mg": "a",
+        "v": "0.1"
+      },
+      "status": 200,
+      "duration": 1.412,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T08:13:20.142929",
+      "url": "https://fund.eastmoney.com/data/rankhandler.aspx",
+      "params": {
+        "op": "ph",
+        "dt": "kf",
+        "ft": "zq",
+        "rs": "",
+        "gs": "0",
+        "sc": "zzf",
+        "st": "desc",
+        "pi": "2",
+        "pn": "200",
+        "mg": "a",
+        "v": "0.1"
+      },
+      "status": 200,
+      "duration": 1.159,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T08:13:21.303360",
+      "url": "https://fund.eastmoney.com/data/rankhandler.aspx",
+      "params": {
+        "op": "ph",
+        "dt": "kf",
+        "ft": "zq",
+        "rs": "",
+        "gs": "0",
+        "sc": "zzf",
+        "st": "desc",
+        "pi": "3",
+        "pn": "200",
+        "mg": "a",
+        "v": "0.1"
+      },
+      "status": 200,
+      "duration": 1.967,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T08:13:23.271964",
+      "url": "https://fund.eastmoney.com/data/rankhandler.aspx",
+      "params": {
+        "op": "ph",
+        "dt": "kf",
+        "ft": "hh",
+        "rs": "",
+        "gs": "0",
+        "sc": "zzf",
+        "st": "desc",
+        "pi": "1",
+        "pn": "200",
+        "mg": "a",
+        "v": "0.1"
+      },
+      "status": 200,
+      "duration": 1.145,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T08:13:24.421322",
+      "url": "https://fund.eastmoney.com/data/rankhandler.aspx",
+      "params": {
+        "op": "ph",
+        "dt": "kf",
+        "ft": "hh",
+        "rs": "",
+        "gs": "0",
+        "sc": "zzf",
+        "st": "desc",
+        "pi": "2",
+        "pn": "200",
+        "mg": "a",
+        "v": "0.1"
+      },
+      "status": 200,
+      "duration": 1.289,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T08:13:25.711200",
+      "url": "https://fund.eastmoney.com/data/rankhandler.aspx",
+      "params": {
+        "op": "ph",
+        "dt": "kf",
+        "ft": "zs",
+        "rs": "",
+        "gs": "0",
+        "sc": "zzf",
+        "st": "desc",
+        "pi": "1",
+        "pn": "300",
+        "mg": "a",
+        "v": "0.1"
+      },
+      "status": 200,
+      "duration": 2.138,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T08:13:27.852615",
+      "url": "https://fund.eastmoney.com/data/rankhandler.aspx",
+      "params": {
+        "op": "ph",
+        "dt": "kf",
+        "ft": "zs",
+        "rs": "",
+        "gs": "0",
+        "sc": "6y",
+        "st": "desc",
+        "pi": "1",
+        "pn": "400",
+        "mg": "a",
+        "v": "0.1"
+      },
+      "status": 200,
+      "duration": 1.473,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T08:13:29.332055",
+      "url": "https://fund.eastmoney.com/data/rankhandler.aspx",
+      "params": {
+        "op": "ph",
+        "dt": "kf",
+        "ft": "hh",
+        "rs": "",
+        "gs": "0",
+        "sc": "6y",
+        "st": "desc",
+        "pi": "1",
+        "pn": "200",
+        "mg": "a",
+        "v": "0.1"
+      },
+      "status": 200,
+      "duration": 0.116,
+      "error": null,
+      "retries": 0
+    },
+    {
+      "timestamp": "2026-06-23T08:13:29.937101",
+      "url": "https://push2.eastmoney.com/api/qt/clist/get",
+      "params": {
+        "pn": "1",
+        "pz": "100",
+        "po": "1",
+        "np": "1",
+        "fltt": "2",
+        "invt": "2",
+        "fs": "m:90+t:2",
+        "fields": "f2,f3,f4,f12,f14,f104,f105,f140,f136"
+      },
+      "status": null,
+      "duration": 1.148,
+      "error": "RequestException: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))",
+      "retries": 2
+    },
+    {
+      "timestamp": "2026-06-23T08:13:31.085102",
+      "url": "https://fund.eastmoney.com/data/rankhandler.aspx",
+      "params": {
+        "op": "ph",
+        "dt": "kf",
+        "ft": "zs",
+        "rs": "",
+        "gs": "0",
+        "sc": "zzf",
+        "st": "desc",
+        "pi": "1",
+        "pn": "400",
+        "mg": "a",
+        "v": "0.1"
+      },
+      "status": 200,
+      "duration": 2.199,
+      "error": null,
+      "retries": 0
+    }
+  ]
+}
